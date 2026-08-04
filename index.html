@@ -3,19 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
     <title>TimerApp</title>
 </head>
 <body>
     <h1>Timer</h1>
     <div id="timeInput">
-        <input type="text" id="minutesInput" placeholder="Minutes"> :
-        <input type="text" id="secondsInput" placeholder="Seconds">
+        <input type="text" id="minutesInput" value="00" maxlength="2"> :
+        <input type="text" id="secondsInput" value="00" maxlength="2">
     </div>
     <div id="buttons">
         <button id="startBtn">Start</button>
         <button id="pauseBtn">Pause</button>
         <button id="resetBtn">Reset</button>
     </div>
+
+    <canvas id="timerCanvas"></canvas>
     
     <script src="app.js"></script>
 </body>
