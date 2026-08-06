@@ -6,67 +6,89 @@ const pauseBtn = document.getElementById('pauseBtn');
 const resetBtn = document.getElementById('resetBtn');
 
 let initialTotalSeconds = 0;
+let currentProgress = 1;
 let progress = 1;
 let totalSeconds = 0;
-let timerInterval = null;
+let animationFrameId = null;
 let isFirstStart = true;
 let isFinished = false;
+let lastTimestamp = 0;
 
 startBtn.addEventListener('click', () => {
+    if (animationFrameId !== null) return; // таймер вже йде — ігноруємо повторний клік
+
     let minutes = Number(minutesInput.value);
-    if(minutes < 0 || minutes > 60){
+    if (minutes < 0 || minutes > 60) {
         alert("Minutes must be between 0 and 60");
         return;
     }
     let seconds = Number(secondsInput.value);
-    if(seconds < 0 || seconds > 60){
+    if (seconds < 0 || seconds > 60) {
         alert("Seconds must be between 0 and 60");
         return;
     }
+
     totalSeconds = minutes * 60 + seconds;
-    displayMinutes = Math.floor(totalSeconds / 60);
-    displaySeconds = totalSeconds % 60;
-    if(totalSeconds === 0){
-        return;
-    } else{
-        timerInterval = setInterval(updateTimer, 1000);
-    }
-    if(isFirstStart){
+    if (totalSeconds === 0) return;
+
+    if (isFirstStart) {
         initialTotalSeconds = totalSeconds;
         isFirstStart = false;
     }
-    progress = totalSeconds / initialTotalSeconds;
+
     isFinished = false;
+    progress = totalSeconds / initialTotalSeconds;
+    lastTimestamp = 0;
+    animationFrameId = requestAnimationFrame(updateTimer);
     drawProgress();
 });
 
-function updateTimer() {
-    totalSeconds--;
-    displayMinutes = Math.floor(totalSeconds / 60);
-    displaySeconds = totalSeconds % 60;
+function updateTimer(timestamp) {
+    if (lastTimestamp === 0) {
+        lastTimestamp = timestamp;
+    }
+    const delta = timestamp - lastTimestamp;
+    if (delta >= 1000) {
+        totalSeconds--;
+        lastTimestamp = timestamp;
+    }
+
+    let displayMinutes = Math.floor(totalSeconds / 60);
+    let displaySeconds = totalSeconds % 60;
     minutesInput.value = displayMinutes.toString().padStart(2, '0');
     secondsInput.value = displaySeconds.toString().padStart(2, '0');
-    if(totalSeconds === 0){
-        clearInterval(timerInterval);
+
+    if (totalSeconds === 0) {
+        cancelAnimationFrame(animationFrameId);
+        animationFrameId = null;
+        currentProgress = 1;
         progress = 1;
         isFinished = true;
+        isFirstStart = true;
         drawProgress();
-    } else {
-        progress = totalSeconds / initialTotalSeconds;
-        drawProgress();
+        return;
     }
+
+    progress = totalSeconds / initialTotalSeconds;
+    currentProgress = progress;
+    drawProgress();
+
+    animationFrameId = requestAnimationFrame(updateTimer);
 }
 
 pauseBtn.addEventListener('click', () => {
-    clearInterval(timerInterval);
+    cancelAnimationFrame(animationFrameId);
+    animationFrameId = null;
 });
 
 resetBtn.addEventListener('click', () => {
-    clearInterval(timerInterval);
+    cancelAnimationFrame(animationFrameId);
+    animationFrameId = null;
     totalSeconds = 0;
     minutesInput.value = "00";
     secondsInput.value = "00";
     progress = 1;
+    currentProgress = 1;
     isFirstStart = true;
     isFinished = false;
     drawProgress();
@@ -87,15 +109,18 @@ const centerX = canvas.width / 2;
 const centerY = canvas.height / 2;
 const radius = 80;
 
-function drawProgress(){
-    ctx.clearRect(0, 0, canvas.width, canvas.height); // очистити canvas
+function drawProgress() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.beginPath();
-    ctx.arc(centerX, centerY, radius, -Math.PI / 2, -Math.PI / 2 + progress * Math.PI * 2);
+    ctx.arc(centerX, centerY, radius, -Math.PI / 2, -Math.PI / 2 + currentProgress * Math.PI * 2);
+    const hue = 120 - currentProgress * 120;
     if (isFinished) {
         ctx.strokeStyle = "green";
     } else {
-        ctx.strokeStyle = "blue";
+        ctx.strokeStyle = `hsl(${hue}, 100%, 50%)`;
     }
+    ctx.shadowColor = "rgba(0, 0, 255, 0.5)";
+    ctx.shadowBlur = 10;
     ctx.lineWidth = 5;
     ctx.stroke();
 }
