@@ -15,7 +15,7 @@ let isFinished = false;
 let lastTimestamp = 0;
 
 startBtn.addEventListener('click', () => {
-    if (animationFrameId !== null) return; // таймер вже йде — ігноруємо повторний клік
+    if (animationFrameId !== null) return;
 
     let minutes = Number(minutesInput.value);
     if (minutes < 0 || minutes > 60) {
@@ -48,17 +48,15 @@ function updateTimer(timestamp) {
         lastTimestamp = timestamp;
     }
     const delta = timestamp - lastTimestamp;
-    if (delta >= 1000) {
-        totalSeconds--;
-        lastTimestamp = timestamp;
-    }
+    totalSeconds = totalSeconds - delta / 1000;
+    lastTimestamp = timestamp;
 
-    let displayMinutes = Math.floor(totalSeconds / 60);
-    let displaySeconds = totalSeconds % 60;
+    let maxNum = Math.max(totalSeconds, 0);
+    let displayMinutes = Math.floor(maxNum / 60);
+    let displaySeconds = Math.ceil(maxNum % 60);
     minutesInput.value = displayMinutes.toString().padStart(2, '0');
     secondsInput.value = displaySeconds.toString().padStart(2, '0');
-
-    if (totalSeconds === 0) {
+    if (totalSeconds <= 0) {
         cancelAnimationFrame(animationFrameId);
         animationFrameId = null;
         currentProgress = 1;
@@ -68,9 +66,8 @@ function updateTimer(timestamp) {
         drawProgress();
         return;
     }
-
     progress = totalSeconds / initialTotalSeconds;
-    currentProgress = progress;
+    currentProgress = currentProgress + (progress - currentProgress) * 0.1;
     drawProgress();
 
     animationFrameId = requestAnimationFrame(updateTimer);
